@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
 
 function createCustomIcon(p) {
@@ -17,7 +17,7 @@ function createCustomIcon(p) {
     </svg>
   `;
   
-  return new L.divIcon({
+  return L.divIcon({
     html,
     className: "custom-map-marker bg-transparent border-none",
     iconSize: [32, 32],
@@ -31,7 +31,7 @@ function safeNumber(n) {
   return Number.isFinite(x) ? x : null;
 }
 
-export default function BinMap({ bins = [] }) {
+export default function BinMap({ bins = [], driverLocation, routePath }) {
   const points = useMemo(() => {
     return (bins || [])
       .map((b) => ({
@@ -46,10 +46,11 @@ export default function BinMap({ bins = [] }) {
   }, [bins]);
 
   const center = useMemo(() => {
+    if (driverLocation) return [driverLocation.lat, driverLocation.lng];
     if (points.length) return [points[0].lat, points[0].lng];
     // Default: Pune
     return [18.5204, 73.8567];
-  }, [points]);
+  }, [points, driverLocation]);
 
   const indiaBounds = [
     [6.4626999, 68.1097], // South-West point
@@ -97,6 +98,24 @@ export default function BinMap({ bins = [] }) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
+          {driverLocation && (
+            <Marker
+              position={[driverLocation.lat, driverLocation.lng]}
+              icon={L.divIcon({
+                html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 border-2 border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] animate-pulse"><div class="w-3 h-3 bg-blue-600 rounded-full"></div></div>`,
+                className: "bg-transparent border-none",
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -16],
+              })}
+            >
+              <Popup>
+                <div className="text-sm font-bold text-blue-700">Your Live Location</div>
+                <div className="text-xs text-gray-600">The route starts from here</div>
+              </Popup>
+            </Marker>
+          )}
+
           {points.map((p) => (
             <Marker
               key={p.id}
@@ -122,6 +141,20 @@ export default function BinMap({ bins = [] }) {
               </Popup>
             </Marker>
           ))}
+
+          {routePath && routePath.length > 1 && (
+            <Polyline
+              positions={routePath.map((pt) => [pt.lat, pt.lng])}
+              pathOptions={{
+                color: "#4f46e5", // Indigo-600
+                weight: 4,
+                opacity: 0.8,
+                dashArray: "10, 10",
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+          )}
         </MapContainer>
       </div>
     </div>

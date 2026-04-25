@@ -374,9 +374,8 @@ function BinTable({ bins, onRefresh }) {
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                      statusColor[bin.status]
-                    }`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor[bin.status]
+                      }`}
                   >
                     {statusIcon[bin.status]}
                     {bin.status}
@@ -405,171 +404,6 @@ function BinTable({ bins, onRefresh }) {
   );
 }
 
-/* ─────────────────── RoutePanel ─────────────────── */
-function RoutePanel() {
-  const [routeData, setRouteData] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleGenerate() {
-    setGenerating(true);
-    setError("");
-    try {
-      const res = await api.generateRoute();
-      setRouteData(res.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  async function loadHistory() {
-    setLoadingHistory(true);
-    try {
-      const res = await api.getRouteHistory();
-      setHistory(res.data || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }
-
-  useEffect(() => {
-    if (showHistory) loadHistory();
-  }, [showHistory]);
-
-  return (
-    <div className="space-y-4">
-      {/* Generate button */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-50"
-          id="generate-route-btn"
-        >
-          <Navigation size={16} className={generating ? "animate-spin" : ""} />
-          {generating ? "Optimizing…" : "Generate Optimized Route"}
-        </button>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-primary-300 hover:text-primary-600"
-        >
-          {showHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          {showHistory ? "Hide History" : "View History"}
-        </button>
-      </div>
-
-      {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Latest generated route */}
-      {routeData && (
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 animate-fade-up">
-          <h4 className="mb-4 text-sm font-bold text-gray-800">Generated Route</h4>
-          {routeData.optimizedPath?.length === 0 ? (
-            <p className="text-sm text-gray-400">No full bins found — no route generated.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="flex items-center gap-3 rounded-xl bg-primary-50 p-4">
-                <MapPin size={20} className="text-primary-600" />
-                <div>
-                  <p className="text-lg font-bold text-primary-700">
-                    {routeData.optimizedPath?.length ?? 0}
-                  </p>
-                  <p className="text-xs text-primary-500">Stops</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-4">
-                <Fuel size={20} className="text-emerald-600" />
-                <div>
-                  <p className="text-lg font-bold text-emerald-700">
-                    {(routeData.totalDistance ?? 0).toFixed(2)} km
-                  </p>
-                  <p className="text-xs text-emerald-500">Total Distance</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-xl bg-violet-50 p-4">
-                <Timer size={20} className="text-violet-600" />
-                <div>
-                  <p className="text-lg font-bold text-violet-700">
-                    {routeData.route?.estimatedTime ?? 0} min
-                  </p>
-                  <p className="text-xs text-violet-500">Est. Time</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Path waypoints */}
-          {routeData.optimizedPath?.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Waypoints
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {routeData.optimizedPath.map((pt, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600"
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white">
-                      {i + 1}
-                    </span>
-                    {pt.lat.toFixed(4)}, {pt.lng.toFixed(4)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Route history */}
-      {showHistory && (
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 animate-fade-up">
-          <h4 className="mb-4 text-sm font-bold text-gray-800">Route History</h4>
-          {loadingHistory ? (
-            <p className="text-sm text-gray-400">Loading…</p>
-          ) : history.length === 0 ? (
-            <p className="text-sm text-gray-400">No routes generated yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {history.slice(0, 10).map((r) => (
-                <div
-                  key={r._id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 p-4 transition hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <Route size={16} className="text-primary-500" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700">
-                        {r.bins?.length ?? 0} bins · {(r.totalDistance ?? 0).toFixed(2)} km
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(r.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-600">
-                    {r.estimatedTime ?? 0} min
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ═══════════════════ DASHBOARD PAGE ═══════════════════ */
 export default function Dashboard() {
   const [bins, setBins] = useState([]);
@@ -577,6 +411,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [tab, setTab] = useState("bins"); // bins | routes
+  const [driverLocation, setDriverLocation] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isWorker = user.role === "WORKER";
@@ -605,6 +440,54 @@ export default function Dashboard() {
     { key: "bins", label: "Bins", icon: Trash2 },
     ...(isWorker ? [{ key: "routes", label: "Routes", icon: Route }] : []),
   ];
+
+  // Extracted RoutePanel logic to share driverLocation state with Map
+  const [routeData, setRouteData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [routeError, setRouteError] = useState("");
+
+  async function handleGenerate() {
+    setGenerating(true);
+    setRouteError("");
+
+    try {
+      const dLat = 19.855;
+      const dLng = 75.335;
+      setDriverLocation({ lat: dLat, lng: dLng });
+
+      const res = await api.generateRoute({
+        driverLat: dLat,
+        driverLng: dLng,
+        driverId: user.id,
+      });
+      setRouteData(res.data);
+      await fetchData();
+      setTab("routes"); // Auto-switch to routes tab to see result
+    } catch (err) {
+      setRouteError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function loadHistory() {
+    setLoadingHistory(true);
+    try {
+      const res = await api.getRouteHistory();
+      setHistory(res.data || []);
+    } catch (err) {
+      setRouteError(err.message);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }
+
+  useEffect(() => {
+    if (showHistory) loadHistory();
+  }, [showHistory]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -652,6 +535,17 @@ export default function Dashboard() {
         {/* Stats row */}
         <StatsCards analytics={analytics} bins={bins} isWorker={isWorker} />
 
+        {/* Live Map (Always visible for workers) */}
+        {isWorker && (
+          <div className="animate-fade-up">
+            <BinMap
+              bins={bins}
+              driverLocation={driverLocation}
+              routePath={routeData?.optimizedPath}
+            />
+          </div>
+        )}
+
         {/* Tabs */}
         {tabs.length > 1 && (
           <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
@@ -659,11 +553,10 @@ export default function Dashboard() {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition ${
-                  tab === t.key
-                    ? "bg-white text-primary-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition ${tab === t.key
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+                  }`}
               >
                 <t.icon size={16} />
                 {t.label}
@@ -675,18 +568,133 @@ export default function Dashboard() {
         {/* Content */}
         {tab === "bins" && (
           <div className="animate-fade-up">
-            {isWorker && (
-              <div className="mb-6">
-                <BinMap bins={bins} />
-              </div>
-            )}
             <BinTable bins={bins} onRefresh={fetchData} />
           </div>
         )}
 
         {tab === "routes" && (
-          <div className="animate-fade-up">
-            <RoutePanel />
+          <div className="animate-fade-up space-y-4">
+            {/* Generate button */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-50"
+                id="generate-route-btn"
+              >
+                <Navigation size={16} className={generating ? "animate-spin" : ""} />
+                {generating ? "Optimizing…" : "Generate Optimized Route"}
+              </button>
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-primary-300 hover:text-primary-600"
+              >
+                {showHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showHistory ? "Hide History" : "View History"}
+              </button>
+            </div>
+
+            {routeError && (
+              <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{routeError}</p>
+            )}
+
+            {/* Latest generated route */}
+            {routeData && (
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 animate-fade-up">
+                <h4 className="mb-4 text-sm font-bold text-gray-800">Generated Route</h4>
+                {routeData.optimizedPath?.length === 0 ? (
+                  <p className="text-sm text-gray-400">No priority bins found — no route generated.</p>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="flex items-center gap-3 rounded-xl bg-primary-50 p-4">
+                      <MapPin size={20} className="text-primary-600" />
+                      <div>
+                        <p className="text-lg font-bold text-primary-700">
+                          {routeData.optimizedPath?.length ?? 0}
+                        </p>
+                        <p className="text-xs text-primary-500">Stops</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-4">
+                      <Fuel size={20} className="text-emerald-600" />
+                      <div>
+                        <p className="text-lg font-bold text-emerald-700">
+                          {(routeData.totalDistance ?? 0).toFixed(2)} km
+                        </p>
+                        <p className="text-xs text-emerald-500">Total Distance</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl bg-violet-50 p-4">
+                      <Timer size={20} className="text-violet-600" />
+                      <div>
+                        <p className="text-lg font-bold text-violet-700">
+                          {routeData.route?.estimatedTime ?? 0} min
+                        </p>
+                        <p className="text-xs text-violet-500">Est. Time</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Path waypoints */}
+                {routeData.optimizedPath?.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                      Waypoints (Starting from Your Location)
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {routeData.optimizedPath.map((pt, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600"
+                        >
+                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                            {i + 1}
+                          </span>
+                          {pt.lat.toFixed(4)}, {pt.lng.toFixed(4)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Route history */}
+            {showHistory && (
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 animate-fade-up">
+                <h4 className="mb-4 text-sm font-bold text-gray-800">Route History</h4>
+                {loadingHistory ? (
+                  <p className="text-sm text-gray-400">Loading…</p>
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-gray-400">No routes generated yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {history.slice(0, 10).map((r) => (
+                      <div
+                        key={r._id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 p-4 transition hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Route size={16} className="text-primary-500" />
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700">
+                              {r.bins?.length ?? 0} bins · {(r.totalDistance ?? 0).toFixed(2)} km
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(r.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-600">
+                          {r.estimatedTime ?? 0} min
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

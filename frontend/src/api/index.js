@@ -31,8 +31,11 @@ export const deleteBin = (id) =>
   request(`/bins/${id}`, { method: "DELETE" });
 
 /* ── Routes ── */
-export const generateRoute = () =>
-  request("/route/generate", { method: "POST" });
+export const generateRoute = (coords) =>
+  request("/route/generate", {
+    method: "POST",
+    body: JSON.stringify(coords || {}),
+  });
 
 export const getRouteHistory = () => request("/route/history");
 
