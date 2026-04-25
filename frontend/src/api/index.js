@@ -39,6 +39,12 @@ export const generateRoute = (coords) =>
 
 export const getRouteHistory = () => request("/route/history");
 
+/* ── Complaints ── */
+export const createComplaint = (data) =>
+  request("/complaints", { method: "POST", body: JSON.stringify(data) });
+
+export const getMyComplaints = () => request("/complaints/mine");
+
 /* ── Stats ── */
 export const getAnalytics = () => request("/stats");
 

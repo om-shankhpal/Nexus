@@ -9,6 +9,7 @@ const binRoutes = require("./routes/binRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const authRoutes = require("./routes/authRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 
@@ -27,6 +28,7 @@ app.use("/api/bins", binRoutes);
 app.use("/api/route", routeRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/complaints", complaintRoutes);
 
 app.use(errorHandler);
 

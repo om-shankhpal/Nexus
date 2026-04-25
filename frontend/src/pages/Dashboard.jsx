@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Trash2,
   Route,
-  BarChart3,
   Plus,
   RefreshCw,
   Fuel,
@@ -18,6 +17,7 @@ import {
   ChevronUp,
   X,
   ShieldAlert,
+  MessageSquare,
 } from "lucide-react";
 import * as api from "../api";
 import BinMap from "../components/BinMap";
@@ -438,7 +438,9 @@ export default function Dashboard() {
 
   const tabs = [
     { key: "bins", label: "Bins", icon: Trash2 },
-    ...(isWorker ? [{ key: "routes", label: "Routes", icon: Route }] : []),
+    ...(isWorker
+      ? [{ key: "routes", label: "Routes", icon: Route }]
+      : [{ key: "complaints", label: "Complaints", icon: MessageSquare }]),
   ];
 
   // Extracted RoutePanel logic to share driverLocation state with Map
@@ -448,6 +450,12 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [routeError, setRouteError] = useState("");
+  const [complaints, setComplaints] = useState([]);
+  const [complaintSubject, setComplaintSubject] = useState("");
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [complaintError, setComplaintError] = useState("");
+  const [loadingComplaints, setLoadingComplaints] = useState(false);
+  const [submittingComplaint, setSubmittingComplaint] = useState(false);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -488,6 +496,44 @@ export default function Dashboard() {
   useEffect(() => {
     if (showHistory) loadHistory();
   }, [showHistory]);
+
+  async function loadComplaints() {
+    setLoadingComplaints(true);
+    setComplaintError("");
+    try {
+      const res = await api.getMyComplaints();
+      setComplaints(res.data || []);
+    } catch (err) {
+      setComplaintError(err.message);
+    } finally {
+      setLoadingComplaints(false);
+    }
+  }
+
+  async function handleCreateComplaint(e) {
+    e.preventDefault();
+    setSubmittingComplaint(true);
+    setComplaintError("");
+    try {
+      await api.createComplaint({
+        subject: complaintSubject,
+        description: complaintDescription,
+      });
+      setComplaintSubject("");
+      setComplaintDescription("");
+      await loadComplaints();
+    } catch (err) {
+      setComplaintError(err.message);
+    } finally {
+      setSubmittingComplaint(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isWorker && tab === "complaints") {
+      loadComplaints();
+    }
+  }, [isWorker, tab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -695,6 +741,91 @@ export default function Dashboard() {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "complaints" && !isWorker && (
+          <div className="animate-fade-up space-y-5">
+            <form
+              onSubmit={handleCreateComplaint}
+              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
+            >
+              <h4 className="text-sm font-bold text-gray-800">Submit Complaint</h4>
+              <p className="mt-1 text-xs text-gray-500">
+                Raise issues about missed collection, overflow, or service delays.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                <input
+                  type="text"
+                  value={complaintSubject}
+                  onChange={(e) => setComplaintSubject(e.target.value)}
+                  placeholder="Subject"
+                  required
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                />
+                <textarea
+                  value={complaintDescription}
+                  onChange={(e) => setComplaintDescription(e.target.value)}
+                  placeholder="Describe your complaint..."
+                  required
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                />
+              </div>
+
+              {complaintError && (
+                <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                  {complaintError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={submittingComplaint}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
+              >
+                <MessageSquare size={15} />
+                {submittingComplaint ? "Submitting..." : "Submit Complaint"}
+              </button>
+            </form>
+
+            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+              <h4 className="mb-4 text-sm font-bold text-gray-800">My Complaints</h4>
+              {loadingComplaints ? (
+                <p className="text-sm text-gray-400">Loading...</p>
+              ) : complaints.length === 0 ? (
+                <p className="text-sm text-gray-400">No complaints submitted yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {complaints.map((c) => (
+                    <div
+                      key={c._id}
+                      className="rounded-xl border border-gray-100 p-4 transition hover:bg-gray-50"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-gray-800">{c.subject}</p>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            c.status === "RESOLVED"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : c.status === "IN_PROGRESS"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-gray-600">{c.description}</p>
+                      <p className="mt-2 text-xs text-gray-400">
+                        Submitted on {new Date(c.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
