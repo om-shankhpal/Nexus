@@ -1,16 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 
 const connectDB = require("./config/db");
 
 const binRoutes = require("./routes/binRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const statsRoutes = require("./routes/statsRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 
@@ -24,6 +26,7 @@ app.get("/", (req, res) => {
 app.use("/api/bins", binRoutes);
 app.use("/api/route", routeRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use(errorHandler);
 

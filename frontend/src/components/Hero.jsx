@@ -24,7 +24,7 @@ export default function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4 animate-fade-up animate-delay-200 md:justify-start">
             <Link
-              to="/dashboard"
+              to="/login"
               className="group inline-flex items-center gap-2 rounded-full bg-primary-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 hover:shadow-xl"
               id="hero-get-started"
             >

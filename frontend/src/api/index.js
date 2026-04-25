@@ -1,8 +1,13 @@
 const BASE = "/api";
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem("token");
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
     ...options,
   });
   const json = await res.json();
@@ -33,3 +38,19 @@ export const getRouteHistory = () => request("/route/history");
 
 /* ── Stats ── */
 export const getAnalytics = () => request("/stats");
+
+/* ── Auth ── */
+export const register = (data) =>
+  request("/auth/register", { method: "POST", body: JSON.stringify(data) });
+
+export const login = (email, password) =>
+  request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+export const loginWorker = (email, password) =>
+  request("/auth/worker/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });

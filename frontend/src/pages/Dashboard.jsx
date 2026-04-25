@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import * as api from "../api";
+import BinMap from "../components/BinMap";
 
 /* ─────────────────────── helpers ─────────────────────── */
 const statusColor = {
@@ -594,6 +595,9 @@ export default function Dashboard() {
         {/* Content */}
         {tab === "bins" && (
           <div className="animate-fade-up">
+            <div className="mb-6">
+              <BinMap bins={bins} />
+            </div>
             <BinTable bins={bins} onRefresh={fetchData} />
           </div>
         )}

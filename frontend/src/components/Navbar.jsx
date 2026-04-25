@@ -30,11 +30,11 @@ export default function Navbar() {
 
         {/* CTA */}
         <Link
-          to="/dashboard"
+          to="/login"
           className="hidden rounded-full bg-primary-600 px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-primary-700 hover:shadow-lg md:inline-flex"
           id="navbar-login"
         >
-          Dashboard
+          Login
         </Link>
 
         {/* Mobile toggle */}
@@ -62,11 +62,11 @@ export default function Navbar() {
             </a>
           ))}
           <Link
-            to="/dashboard"
+            to="/login"
             className="mt-2 block w-full rounded-full bg-primary-600 py-2.5 text-center text-sm font-semibold text-white shadow-md transition hover:bg-primary-700"
             onClick={() => setOpen(false)}
           >
-            Dashboard
+            Login
           </Link>
         </div>
       )}

@@ -35,7 +35,7 @@ async function generateOptimizedRoute(req, res, next) {
     const estimatedTime =
       totalDistance === 0
         ? 0
-        : Math.round((totalDistance / avgSpeedKmPerHour) * 60); // minutes
+        : Math.round((totalDistance / avgSpeedKmPerHour) * 60);
 
     const routeDoc = await Route.create({
       bins,
