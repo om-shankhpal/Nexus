@@ -25,11 +25,11 @@ app.use("/api/bins", binRoutes);
 app.use("/api/route", routeRoutes);
 app.use("/api/stats", statsRoutes);
 
+app.use(errorHandler);
+
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
-
-app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

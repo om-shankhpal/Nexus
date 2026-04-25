@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Bin = require("../models/Bin");
 
 function getStatusFromFillLevel(fillLevel) {
@@ -38,6 +39,18 @@ async function updateBinFillLevel(req, res, next) {
     const { id } = req.params;
     const { fillLevel } = req.body || {};
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const e = new Error("Invalid bin ID");
+      e.statusCode = 400;
+      throw e;
+    }
+
+    if (fillLevel === undefined || fillLevel === null) {
+      const e = new Error("fillLevel is required");
+      e.statusCode = 400;
+      throw e;
+    }
+
     const nextFillLevel = Math.max(0, Math.min(100, Number(fillLevel)));
     if (Number.isNaN(nextFillLevel)) {
       const e = new Error("fillLevel must be a number between 0 and 100");
@@ -69,6 +82,12 @@ async function updateBinFillLevel(req, res, next) {
 async function deleteBin(req, res, next) {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const e = new Error("Invalid bin ID");
+      e.statusCode = 400;
+      throw e;
+    }
 
     const bin = await Bin.findByIdAndDelete(id);
     if (!bin) {
