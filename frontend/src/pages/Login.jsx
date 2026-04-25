@@ -17,6 +17,8 @@ export default function Login() {
   }, [location.search]);
 
   const [mode, setMode] = useState("USER"); // USER | WORKER
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -28,17 +30,22 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const res =
-        mode === "WORKER"
-          ? await api.loginWorker(email, password)
-          : await api.login(email, password);
+      let res;
+      if (isRegistering) {
+        res = await api.register({ name, email, password, role: mode });
+      } else {
+        res =
+          mode === "WORKER"
+            ? await api.loginWorker(email, password)
+            : await api.login(email, password);
+      }
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       navigate(redirectTo);
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || (isRegistering ? "Registration failed" : "Login failed"));
     } finally {
       setLoading(false);
     }
@@ -59,10 +66,12 @@ export default function Login() {
           <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
             <div className="mb-6">
               <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
-                Sign in
+                {isRegistering ? "Create an account" : "Sign in"}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                Choose your role and login to access the dashboard.
+                {isRegistering
+                  ? "Sign up to start managing waste."
+                  : "Choose your role and login to access the dashboard."}
               </p>
             </div>
 
@@ -102,6 +111,21 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isRegistering && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    type="text"
+                    required
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                    placeholder="John Doe"
+                  />
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Email
@@ -146,14 +170,40 @@ export default function Login() {
                 disabled={loading}
                 className="w-full rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? "Signing in…" : "Sign in"}
+                {loading
+                  ? isRegistering
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : isRegistering
+                  ? "Sign up"
+                  : "Sign in"}
               </button>
             </form>
 
             <p className="mt-5 text-center text-xs text-gray-500">
-              Don’t have an account? Use the{" "}
-              <span className="font-semibold text-gray-700">register API</span>{" "}
-              first.
+              {isRegistering ? (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsRegistering(false)}
+                    className="font-semibold text-primary-600 hover:text-primary-500"
+                  >
+                    Sign in here
+                  </button>
+                </>
+              ) : (
+                <>
+                  Don’t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsRegistering(true)}
+                    className="font-semibold text-primary-600 hover:text-primary-500"
+                  >
+                    Register here
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>

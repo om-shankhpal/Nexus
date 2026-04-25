@@ -12,6 +12,11 @@ const BinSchema = new mongoose.Schema(
       enum: ["EMPTY", "MEDIUM", "FULL"],
       default: "EMPTY",
     },
+    segregationType: {
+      type: String,
+      enum: ["WET", "DRY", "PLASTIC", "E_WASTE", "MIXED"],
+      default: "MIXED",
+    },
     lastCollectedAt: { type: Date },
   },
   { timestamps: true }

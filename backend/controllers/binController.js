@@ -10,13 +10,14 @@ function getStatusFromFillLevel(fillLevel) {
 
 async function createBin(req, res, next) {
   try {
-    const { location, fillLevel = 0, lastCollectedAt } = req.body || {};
+    const { location, fillLevel = 0, lastCollectedAt, segregationType = "MIXED" } = req.body || {};
 
     const bin = await Bin.create({
       location,
       fillLevel,
       status: getStatusFromFillLevel(fillLevel),
       lastCollectedAt,
+      segregationType,
     });
 
     res.status(201).json({ success: true, data: bin });
@@ -34,10 +35,10 @@ async function getAllBins(req, res, next) {
   }
 }
 
-async function updateBinFillLevel(req, res, next) {
+async function updateBin(req, res, next) {
   try {
     const { id } = req.params;
-    const { fillLevel } = req.body || {};
+    const { fillLevel, segregationType } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       const e = new Error("Invalid bin ID");
@@ -45,25 +46,26 @@ async function updateBinFillLevel(req, res, next) {
       throw e;
     }
 
-    if (fillLevel === undefined || fillLevel === null) {
-      const e = new Error("fillLevel is required");
-      e.statusCode = 400;
-      throw e;
+    const updates = {};
+
+    if (fillLevel !== undefined && fillLevel !== null) {
+      const nextFillLevel = Math.max(0, Math.min(100, Number(fillLevel)));
+      if (Number.isNaN(nextFillLevel)) {
+        const e = new Error("fillLevel must be a number between 0 and 100");
+        e.statusCode = 400;
+        throw e;
+      }
+      updates.fillLevel = nextFillLevel;
+      updates.status = getStatusFromFillLevel(nextFillLevel);
     }
 
-    const nextFillLevel = Math.max(0, Math.min(100, Number(fillLevel)));
-    if (Number.isNaN(nextFillLevel)) {
-      const e = new Error("fillLevel must be a number between 0 and 100");
-      e.statusCode = 400;
-      throw e;
+    if (segregationType) {
+      updates.segregationType = segregationType;
     }
 
     const bin = await Bin.findByIdAndUpdate(
       id,
-      {
-        fillLevel: nextFillLevel,
-        status: getStatusFromFillLevel(nextFillLevel),
-      },
+      updates,
       { new: true, runValidators: true }
     );
 
@@ -105,6 +107,6 @@ async function deleteBin(req, res, next) {
 module.exports = {
   createBin,
   getAllBins,
-  updateBinFillLevel,
+  updateBin,
   deleteBin,
 };

@@ -39,15 +39,18 @@ async function seedBins() {
   const pune = { lat: 18.5204, lng: 73.8567 };
   const sambhajiNagar = { lat: 19.8762, lng: 75.3433 };
   const centers = [pune, sambhajiNagar];
+  const types = ["WET", "DRY", "PLASTIC", "E_WASTE", "MIXED"];
 
   const bins = Array.from({ length: 60 }).map(() => {
     const center = centers[randomInt(0, centers.length - 1)];
     const fillLevel = randomInt(0, 100);
+    const segregationType = types[randomInt(0, types.length - 1)];
     return {
       location: randomLocationAround(center),
       fillLevel,
       status: getStatusFromFillLevel(fillLevel),
       lastCollectedAt: randomDateWithinDays(30),
+      segregationType,
     };
   });
 

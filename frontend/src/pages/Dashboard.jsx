@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  ShieldAlert,
 } from "lucide-react";
 import * as api from "../api";
 import BinMap from "../components/BinMap";
@@ -50,8 +51,11 @@ function fillBar(level) {
 }
 
 /* ─────────────────── StatsCards ─────────────────── */
-function StatsCards({ analytics, bins }) {
+function StatsCards({ analytics, bins, isWorker }) {
   const fullBins = bins.filter((b) => b.status === "FULL").length;
+  const hazardousBins = bins.filter((b) => b.segregationType === "E_WASTE").length;
+  const collectedBins = bins.filter((b) => b.status === "EMPTY").length;
+
   const cards = [
     {
       label: "Total Bins",
@@ -60,24 +64,39 @@ function StatsCards({ analytics, bins }) {
       accent: "text-primary-600 bg-primary-50",
     },
     {
+      label: "Collected Bins",
+      value: collectedBins,
+      icon: CheckCircle2,
+      accent: "text-emerald-600 bg-emerald-50",
+    },
+    {
       label: "Full Bins",
       value: fullBins,
       icon: AlertTriangle,
       accent: "text-red-600 bg-red-50",
     },
     {
+      label: "Hazardous Bins",
+      value: hazardousBins,
+      icon: ShieldAlert,
+      accent: "text-orange-600 bg-orange-50",
+    },
+  ];
+
+  if (isWorker) {
+    cards.push({
       label: "Routes Executed",
       value: analytics?.totalRoutesExecuted ?? 0,
       icon: Route,
       accent: "text-violet-600 bg-violet-50",
-    },
-    {
+    });
+    cards.push({
       label: "Avg Distance (km)",
       value: (analytics?.averageRouteDistance ?? 0).toFixed(1),
       icon: Navigation,
       accent: "text-accent-600 bg-emerald-50",
-    },
-  ];
+    });
+  }
 
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -106,18 +125,43 @@ function AddBinModal({ onClose, onCreated }) {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [fillLevel, setFillLevel] = useState(0);
+  const [segregationType, setSegregationType] = useState("MIXED");
   const [loading, setLoading] = useState(false);
+  const [locLoading, setLocLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleGetLocation = () => {
+    setError("");
+    setLocLoading(true);
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      setLocLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLat(position.coords.latitude);
+        setLng(position.coords.longitude);
+        setLocLoading(false);
+      },
+      (err) => {
+        setError("Unable to retrieve your location");
+        setLocLoading(false);
+      }
+    );
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    if (!lat || !lng) return setError("Latitude and longitude are required");
+    if (lat === "" || lng === "") return setError("Latitude and longitude are required");
     setLoading(true);
     try {
       await api.createBin({
         location: { lat: Number(lat), lng: Number(lng) },
         fillLevel: Number(fillLevel),
+        segregationType,
       });
       onCreated();
       onClose();
@@ -145,27 +189,43 @@ function AddBinModal({ onClose, onCreated }) {
           <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>
         )}
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Latitude</label>
-        <input
-          type="number"
-          step="any"
-          value={lat}
-          onChange={(e) => setLat(e.target.value)}
-          className="mb-4 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          placeholder="e.g. 19.0760"
-          id="add-bin-lat"
-        />
+        <div className="mb-4 flex items-center justify-between">
+          <label className="block text-sm font-medium text-gray-700">Location</label>
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            disabled={locLoading}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+          >
+            <MapPin size={14} />
+            {locLoading ? "Detecting..." : "Use Live Location"}
+          </button>
+        </div>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Longitude</label>
-        <input
-          type="number"
-          step="any"
-          value={lng}
-          onChange={(e) => setLng(e.target.value)}
-          className="mb-4 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          placeholder="e.g. 72.8777"
-          id="add-bin-lng"
-        />
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Latitude</label>
+            <input
+              type="number"
+              step="any"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+              placeholder="e.g. 19.0760"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Longitude</label>
+            <input
+              type="number"
+              step="any"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+              placeholder="e.g. 72.8777"
+            />
+          </div>
+        </div>
 
         <label className="mb-1 block text-sm font-medium text-gray-700">
           Fill Level ({fillLevel}%)
@@ -176,9 +236,22 @@ function AddBinModal({ onClose, onCreated }) {
           max={100}
           value={fillLevel}
           onChange={(e) => setFillLevel(e.target.value)}
-          className="mb-6 w-full accent-primary-600"
+          className="mb-4 w-full accent-primary-600"
           id="add-bin-fill"
         />
+
+        <label className="mb-1 block text-sm font-medium text-gray-700">Segregation Type</label>
+        <select
+          value={segregationType}
+          onChange={(e) => setSegregationType(e.target.value)}
+          className="mb-6 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        >
+          <option value="WET">WET</option>
+          <option value="DRY">DRY</option>
+          <option value="PLASTIC">PLASTIC</option>
+          <option value="E_WASTE">E_WASTE</option>
+          <option value="MIXED">MIXED</option>
+        </select>
 
         <button
           type="submit"
@@ -505,6 +578,9 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [tab, setTab] = useState("bins"); // bins | routes
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isWorker = user.role === "WORKER";
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -527,7 +603,7 @@ export default function Dashboard() {
 
   const tabs = [
     { key: "bins", label: "Bins", icon: Trash2 },
-    { key: "routes", label: "Routes", icon: Route },
+    ...(isWorker ? [{ key: "routes", label: "Routes", icon: Route }] : []),
   ];
 
   return (
@@ -545,7 +621,9 @@ export default function Dashboard() {
             </Link>
             <div className="flex items-center gap-2">
               <LayoutDashboard size={20} className="text-primary-600" />
-              <h1 className="text-lg font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-lg font-bold text-gray-900">
+                {isWorker ? "Driver Dashboard" : "User Dashboard"}
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -572,32 +650,36 @@ export default function Dashboard() {
 
       <div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
         {/* Stats row */}
-        <StatsCards analytics={analytics} bins={bins} />
+        <StatsCards analytics={analytics} bins={bins} isWorker={isWorker} />
 
         {/* Tabs */}
-        <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition ${
-                tab === t.key
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <t.icon size={16} />
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {tabs.length > 1 && (
+          <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition ${
+                  tab === t.key
+                    ? "bg-white text-primary-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <t.icon size={16} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
         {tab === "bins" && (
           <div className="animate-fade-up">
-            <div className="mb-6">
-              <BinMap bins={bins} />
-            </div>
+            {isWorker && (
+              <div className="mb-6">
+                <BinMap bins={bins} />
+              </div>
+            )}
             <BinTable bins={bins} onRefresh={fetchData} />
           </div>
         )}
